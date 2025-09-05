@@ -1,82 +1,48 @@
 import copy
-
+from abc import ABC, abstractmethod
 from business_object.statistic import Statistic
 
 
-class Pokemon:
+class AbstractPokemon(ABC):
     """
-    A Pokemon
+    Abstract class representing a Pokemon.
     """
 
-    # -------------------------------------------------------------------------
-    # Constructor
-    # -------------------------------------------------------------------------
-
-    def __init__(self, stat_max=None, stat_current=None, level=0, name=None, type_pk=None):
-        # -----------------------------
-        # Attributes
-        # -----------------------------
+    def __init__(self, stat_max: Statistic = None, stat_current: Statistic = None,
+                 level: int = 0, name: str = None):
         self._stat_max: Statistic = stat_max
-        self._stat_current: Statistic = stat_current
+        self._stat_current: Statistic = stat_current or copy.deepcopy(stat_max)
         self._level: int = level
         self._name: str = name
-        self._type: str = type_pk
+
+    # -------------------------------------------------------------------------
+    # Abstract method
+    # -------------------------------------------------------------------------
+    @abstractmethod
+    def get_pokemon_attack_coef(self) -> float:
+        """Compute the damage multiplier depending on the Pokemon type."""
+        pass
 
     # -------------------------------------------------------------------------
     # Methods
     # -------------------------------------------------------------------------
-
-    def get_pokemon_attack_coef(self) -> float:
-        """
-        Compute a damage multiplier related to the pokemon type.
-
-        Returns :
-            float : the multiplier
-        """
-        if self._type == "Attacker":
-            multiplier = 1 + (self.speed_current + self.attack_current) / 200
-        elif self._type == "Defender":
-            multiplier = 1 + (self.attack_current + self.defense_current) / 200
-        elif self._type == "All rounder":
-            multiplier = 1 + (self.sp_atk_current + self.sp_def_current) / 200
-        elif self._type == "Speedster":
-            multiplier = 1 + (self.speed_current + self.sp_atk_current) / 200
-        elif self._type == "Supporter":
-            multiplier = 1 + (self.sp_atk_current + self.defense_current) / 200
-        else:
-            raise Exception("unknown type")
-
-        return multiplier
-
     def level_up(self) -> None:
-        """
-        Increase the level by one
-        """
         self._level += 1
 
     def reset_actual_stat(self) -> None:
         self._stat_current = copy.deepcopy(self._stat_max)
 
-    def get_hit(self, damage) -> None:
-        """
-        Decrease health point when receiving damages
-        """
+    def get_hit(self, damage: float) -> None:
         if damage > 0:
-            if damage < self.hp_current:
-                self.hp_current -= damage
-            else:
-                self.hp_current = 0
+            self.hp_current = max(0, self.hp_current - damage)
 
     def __str__(self):
-        res = "I am " + str(self.name)
-        res += ", level : " + str(self.level)
-        res += ", attack coef : " + str(self.get_pokemon_attack_coef())
-        return res
+        return f"I am {self.name}, level: {self.level}, attack coef: {
+            self.get_pokemon_attack_coef():.2f}"
 
     # -------------------------------------------------------------------------
     # Getters and Setters
     # -------------------------------------------------------------------------
-
     @property
     def attack(self):
         return self._stat_max.attack
@@ -148,11 +114,6 @@ class Pokemon:
     @speed_current.setter
     def speed_current(self, value):
         self._stat_current.speed = value
-
-    # Basic Getter / Setter
-    @property
-    def stat(self):
-        return self.stat
 
     @property
     def level(self):
